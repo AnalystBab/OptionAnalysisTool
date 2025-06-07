@@ -1,0 +1,67 @@
+# CURSOR RULES FOR INDIAN OPTION ANALYSIS TOOL PROJECT
+
+## 🚨 MANDATORY FIRST STEP FOR EVERY AI SESSION
+**ALWAYS** read `APPLICATION_DEVELOPMENT_REQUIREMENTS.md` before starting any task.
+This file contains complete project specifications, current status, and task priorities.
+
+## PROJECT CONTEXT
+- **Project**: Indian Option Market Analysis Tool
+- **Market Focus**: Index Options Only (Indian Market) 
+- **Primary Purpose**: Circuit Limit Tracking and Analysis
+- **Data Source**: Kite Connect API
+- **Market Hours**: 9:15 AM to 3:30 PM (Pre-open: 9:00-9:15 AM)
+
+## DEVELOPMENT PROTOCOL
+1. **STOP AND SEARCH FIRST:**
+   - Use grep_search to find existing references
+   - Use file_search to find related files  
+   - Use list_dir to understand directory structure
+   - DO NOT CREATE DUPLICATE CODE
+   - ALWAYS CHECK WHETHER CODE ALREADY EXISTS IN CODEBASE
+
+2. **VERIFY BEFORE CHANGING:**
+   - Confirm if file exists
+   - Check for similar functionality
+   - Validate namespace and location
+   - Do not modify centralized package files without consent
+   - Both domain application layers compiled successfully - get consent before changes
+
+3. **API CLIENT RESTRICTIONS:**
+   - Do not modify auto-generated files from OpenAPI/Swagger specifications
+   - Interface defines contract between client and server
+   - Changes should be made to API/backend first, then regenerate client interface
+   - Manual modifications to generated files cause inconsistencies
+
+## CORE REQUIREMENTS SUMMARY
+1. **Application Timing**: Start 9 AM, ready by 9:15 AM
+2. **Intraday Tracking**: Real-time circuit limit monitoring with timestamps
+3. **EOD Processing**: Merge intraday circuit data with Kite EOD data
+4. **Historical Queries**: View circuit limit changes for any date/strike
+
+## TASK WORKFLOW
+1. ✅ Check `APPLICATION_DEVELOPMENT_REQUIREMENTS.md` 
+2. ✅ Update task tracking section with current task
+3. ✅ Search existing codebase to prevent duplication
+4. ✅ Implement changes following documented approach
+5. ✅ Update progress status after completion
+6. ✅ Commit changes with descriptive messages
+
+## PROHIBITED ACTIONS
+- Never create duplicate functionality
+- Never modify auto-generated API client files
+- Never change centralized package files without explicit consent
+- Never create temporary files for iteration
+- Never deviate from common approach for images folder organization
+
+## DEVELOPMENT PRIORITIES
+1. **HIGH**: Real-time circuit limit monitoring service
+2. **HIGH**: Database schema for circuit limit tracking  
+3. **MEDIUM**: Application startup automation
+4. **MEDIUM**: EOD data processing pipeline
+5. **LOW**: Historical data query interface
+
+## COMMUNICATION RULES
+- Always explain what you're doing in natural language
+- Get confirmation before major architectural changes
+- Document findings and show existing related files
+- Explain needed changes before implementation 
