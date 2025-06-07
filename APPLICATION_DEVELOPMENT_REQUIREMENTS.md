@@ -1,4 +1,8 @@
+# 🚨 CRITICAL: READ THIS FIRST FOR EVERY TASK 🚨
 # APPLICATION DEVELOPMENT REQUIREMENTS & TRACKING
+
+> **⚠️ MANDATORY**: Any AI assistant working on this project MUST read this file completely before starting any task.
+> This file contains the complete development roadmap, requirements, and current status.
 
 ## Project Overview
 **Indian Option Market Analysis Tool**
