@@ -24,7 +24,7 @@ namespace OptionAnalysisTool.KiteConnect
         public class TokenData
         {
             public string AccessToken { get; set; } = string.Empty;
-            public DateTime ExpiryTime { get; set; }
+            public DateTime ExpiresAt { get; set; }
             public DateTime LastLoginTime { get; set; }
         }
 
@@ -42,22 +42,22 @@ namespace OptionAnalysisTool.KiteConnect
                     return (null, "Failed to deserialize token data.");
 
                 // Check if token is expired (tokens expire at 6 AM IST the next day)
-                if (token.ExpiryTime <= DateTime.UtcNow)
+                if (token.ExpiresAt <= DateTime.UtcNow)
                 {
                     var istTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, 
                         TimeZoneInfo.FindSystemTimeZoneById("India Standard Time"));
                     
-                    return (null, $"Session expired at {token.ExpiryTime:HH:mm} IST. Daily login is required by Zerodha.");
+                    return (null, $"Session expired at {token.ExpiresAt:HH:mm} IST. Daily login is required by Zerodha.");
                 }
 
                 // Calculate time until expiry
-                var timeUntilExpiry = token.ExpiryTime - DateTime.UtcNow;
+                var timeUntilExpiry = token.ExpiresAt - DateTime.UtcNow;
                 if (timeUntilExpiry.TotalHours < 2)
                 {
                     return (token, $"Session will expire in {timeUntilExpiry.TotalMinutes:0} minutes. Consider logging in again.");
                 }
 
-                return (token, $"Session valid until {token.ExpiryTime:HH:mm} IST");
+                return (token, $"Session valid until {token.ExpiresAt:HH:mm} IST");
             }
             catch (Exception ex)
             {
@@ -80,7 +80,7 @@ namespace OptionAnalysisTool.KiteConnect
                 var tokenData = new TokenData
                 {
                     AccessToken = accessToken,
-                    ExpiryTime = TimeZoneInfo.ConvertTimeToUtc(expiryDate, 
+                    ExpiresAt = TimeZoneInfo.ConvertTimeToUtc(expiryDate, 
                         TimeZoneInfo.FindSystemTimeZoneById("India Standard Time")),
                     LastLoginTime = DateTime.UtcNow
                 };

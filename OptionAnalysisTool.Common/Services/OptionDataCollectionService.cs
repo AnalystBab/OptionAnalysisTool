@@ -114,11 +114,8 @@ namespace OptionAnalysisTool.Common.Services
         {
             try
             {
-                if (!_marketHoursService.IsMarketOpen())
-                {
-                    _logger.LogInformation("Market is closed. Skipping data collection.");
-                    return;
-                }
+                var today = DateTime.UtcNow.Date;
+                var isMarketOpen = _marketHoursService.IsMarketOpen();
 
                 var instruments = await _kiteConnectService.GetInstrumentsAsync();
                 var optionInstruments = instruments
@@ -132,6 +129,20 @@ namespace OptionAnalysisTool.Common.Services
                         var kiteQuote = await _kiteConnectService.GetQuoteAsync(instrument.InstrumentToken);
                         if (kiteQuote != null)
                         {
+                            // Check if we already have a snapshot for today with circuit limits
+                            var hasTodaySnapshot = await _context.IntradayOptionSnapshots.AnyAsync(s =>
+                                s.InstrumentToken == instrument.InstrumentToken &&
+                                s.Timestamp.Date == today &&
+                                s.LowerCircuitLimit == kiteQuote.LowerCircuitLimit &&
+                                s.UpperCircuitLimit == kiteQuote.UpperCircuitLimit);
+
+                            if (!isMarketOpen && hasTodaySnapshot)
+                            {
+                                // After market close, if we already have today's final circuit data, skip further polling for this instrument
+                                _logger.LogInformation($"[DataService] Market closed and final circuit data for {instrument.TradingSymbol} already present. Skipping further polling for today.");
+                                continue;
+                            }
+
                             var snapshot = new IntradayOptionSnapshot
                             {
                                 InstrumentToken = instrument.InstrumentToken,

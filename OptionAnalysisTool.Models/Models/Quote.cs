@@ -66,9 +66,12 @@ namespace OptionAnalysisTool.Models
         public Quote()
         {
             InstrumentToken = string.Empty;
-            TimeStamp = DateTime.UtcNow;
-            CaptureTime = DateTime.UtcNow;
-            LastUpdated = DateTime.UtcNow;
+            // Use IST timestamps (same as Kite API format)
+            var ist = TimeZoneInfo.FindSystemTimeZoneById("India Standard Time");
+            var nowIST = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, ist);
+            TimeStamp = nowIST;
+            CaptureTime = nowIST;
+            LastUpdated = nowIST;
             LastPrice = 0m;
             Open = 0m;
             High = 0m;
@@ -110,7 +113,8 @@ namespace OptionAnalysisTool.Models
             int lastQuantity = 0,
             decimal averagePrice = 0m,
             int buyQuantity = 0,
-            int sellQuantity = 0)
+            int sellQuantity = 0,
+            DateTime? kiteTimestamp = null)
         {
             return new Quote
             {
@@ -130,9 +134,10 @@ namespace OptionAnalysisTool.Models
                 AveragePrice = averagePrice,
                 BuyQuantity = buyQuantity,
                 SellQuantity = sellQuantity,
-                TimeStamp = DateTime.UtcNow,
-                CaptureTime = DateTime.UtcNow,
-                LastUpdated = DateTime.UtcNow,
+                // Preserve Kite API timestamp (IST format)
+                TimeStamp = kiteTimestamp ?? GetCurrentIST(),
+                CaptureTime = GetCurrentIST(),
+                LastUpdated = GetCurrentIST(),
                 IsValidData = true
             };
         }
@@ -161,9 +166,10 @@ namespace OptionAnalysisTool.Models
                     LowerCircuitLimit = GetPropertyValue<decimal>(kiteQuote, "LowerCircuitLimit"),
                     UpperCircuitLimit = GetPropertyValue<decimal>(kiteQuote, "UpperCircuitLimit"),
                     ImpliedVolatility = GetPropertyValue<decimal>(kiteQuote, "ImpliedVolatility"),
+                    // Preserve original Kite timestamp (IST format)
                     TimeStamp = GetPropertyValue<DateTime>(kiteQuote, "TimeStamp"),
-                    CaptureTime = DateTime.UtcNow,
-                    LastUpdated = DateTime.UtcNow,
+                    CaptureTime = GetCurrentIST(),
+                    LastUpdated = GetCurrentIST(),
                     LastQuantity = GetPropertyValue<int>(kiteQuote, "LastQuantity"),
                     AveragePrice = GetPropertyValue<decimal>(kiteQuote, "AveragePrice"),
                     BuyQuantity = GetPropertyValue<int>(kiteQuote, "BuyQuantity"),
@@ -189,6 +195,20 @@ namespace OptionAnalysisTool.Models
                 return (T)(object)value.ToString()!;
                 
             return (T)Convert.ChangeType(value, typeof(T));
+        }
+
+        // Helper method to get current IST time
+        private static DateTime GetCurrentIST()
+        {
+            try
+            {
+                var ist = TimeZoneInfo.FindSystemTimeZoneById("India Standard Time");
+                return TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, ist);
+            }
+            catch
+            {
+                return DateTime.Now; // Fallback to local time
+            }
         }
     }
 } 

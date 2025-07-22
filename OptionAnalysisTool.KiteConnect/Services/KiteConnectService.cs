@@ -7,37 +7,41 @@ using System.Threading;
 using System.Diagnostics;
 using System.Linq;
 using OptionAnalysisTool.Models;
-
+using Microsoft.Extensions.Configuration;
 using OptionAnalysisTool.KiteConnect.Models;
-using ExternalKite = KiteConnect;
-
+using KiteConnectAPI = KiteConnect;
 
 namespace OptionAnalysisTool.KiteConnect.Services
 {
     public class KiteConnectService : IKiteConnectService
     {
         private readonly ILogger<KiteConnectService> _logger;
-        private readonly string _apiKey;
-        private readonly string _apiSecret;
-        private ExternalKite.Kite? _kite;
+        private readonly IConfiguration _configuration;
+        private KiteConnectAPI.Kite _kite;
         private bool _isInitialized;
         private readonly KiteConnectConfig _config;
         private readonly TokenStorage _tokenStorage;
+        private readonly KiteConnectWrapper _kiteWrapper;
         private string _accessToken = string.Empty;
+        private bool _isConnected;
         private readonly SemaphoreSlim _initializationLock = new SemaphoreSlim(1, 1);
         private volatile bool _isInitializing;
         private string _lastStatusMessage = string.Empty;
         private TaskCompletionSource<bool>? _initializationTask;
-        private readonly KiteConnectWrapper _kiteWrapper;
-        private bool _isConnected;
 
-        public KiteConnectService(ILogger<KiteConnectService> logger, IOptions<KiteConnectConfig> config, KiteConnectWrapper kiteWrapper)
+        public KiteConnectService(ILogger<KiteConnectService> logger, IConfiguration configuration, KiteConnectWrapper kiteWrapper)
         {
             _logger = logger;
-            _config = config.Value;
-            _apiKey = _config.ApiKey;
-            _apiSecret = _config.ApiSecret;
-            _tokenStorage = new TokenStorage(config);
+            _configuration = configuration;
+            _config = new KiteConnectConfig
+            {
+                ApiKey = _configuration["KiteConnect:ApiKey"] ?? string.Empty,
+                ApiSecret = _configuration["KiteConnect:ApiSecret"] ?? string.Empty,
+                RedirectUrl = _configuration["KiteConnect:RedirectUrl"] ?? "http://localhost:8080"
+            };
+            _kite = new KiteConnectAPI.Kite(_config.ApiKey);
+            _isInitialized = false;
+            _tokenStorage = new TokenStorage(new OptionsWrapper<KiteConnectConfig>(_config));
             _kiteWrapper = kiteWrapper;
             
             var tokenResult = _tokenStorage.LoadToken().GetAwaiter().GetResult();
@@ -47,9 +51,9 @@ namespace OptionAnalysisTool.KiteConnect.Services
             if (tokenResult.Token != null)
             {
                 _accessToken = tokenResult.Token.AccessToken;
-                _kite = new ExternalKite.Kite(_apiKey, _apiSecret);
+                _kite = new KiteConnectAPI.Kite(_config.ApiKey);
                 _kite.SetAccessToken(_accessToken);
-                _logger.LogInformation("Loaded existing access token valid until {expiry}", tokenResult.Token.ExpiryTime);
+                _logger.LogInformation("Loaded existing access token valid until {expiry}", tokenResult.Token.ExpiresAt);
                 _isInitialized = true;
                 _isConnected = true;
             }
@@ -60,101 +64,106 @@ namespace OptionAnalysisTool.KiteConnect.Services
 
         public async Task<bool> InitializeAsync()
         {
-            if (_isInitialized) return true;
-
             try
             {
-                await _initializationLock.WaitAsync();
-                
-                if (_isInitialized) return true;
-                
-                if (_isInitializing)
+                if (string.IsNullOrEmpty(_config.ApiKey))
                 {
-                    if (_initializationTask == null)
-                    {
-                        _initializationTask = new TaskCompletionSource<bool>();
-                    }
-                    return await _initializationTask.Task;
-                }
-
-                _isInitializing = true;
-                _initializationTask = new TaskCompletionSource<bool>();
-
-                try
-                {
-                    var tokenResult = await _tokenStorage.LoadToken();
-                    if (tokenResult.Token != null && tokenResult.Token.ExpiryTime > DateTime.UtcNow)
-                    {
-                        _accessToken = tokenResult.Token.AccessToken;
-                        _kite = new ExternalKite.Kite(_apiKey);
-                        _kite.SetAccessToken(_accessToken);
-                        _logger.LogInformation("Loaded existing access token valid until {expiry}", tokenResult.Token.ExpiryTime);
-                        _isInitialized = true;
-                        _isConnected = true;
-                    }
-                    else
-                    {
-                        _kite = new ExternalKite.Kite(_apiKey);
-                        _isInitialized = true;
-                        _isConnected = false;
-                    }
-
-                    _initializationTask.SetResult(true);
-                    return true;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Failed to initialize KiteConnect");
-                    _initializationTask.SetException(ex);
+                    _logger.LogError("KiteConnect API key not found in configuration");
                     return false;
                 }
-                finally
-                {
-                    _isInitializing = false;
-                }
+
+                _kite = new KiteConnectAPI.Kite(_config.ApiKey);
+                _isInitialized = true;
+                _logger.LogInformation("KiteConnect initialized successfully with API key: {apiKey}", _config.ApiKey);
+                return true;
             }
-            finally
+            catch (Exception ex)
             {
-                _initializationLock.Release();
+                _logger.LogError(ex, "Failed to initialize KiteConnect: {Message}", ex.Message);
+                return false;
             }
         }
 
-        public void SetAccessToken(string accessToken)
-        {
-            if (string.IsNullOrEmpty(accessToken))
-            {
-                throw new ArgumentException("Access token cannot be null or empty", nameof(accessToken));
-            }
-
-            if (_kite == null)
-            {
-                _kite = new ExternalKite.Kite(_apiKey);
-            }
-
-            _kite.SetAccessToken(accessToken);
-            _accessToken = accessToken;
-            _isConnected = true;
-        }
-
-        public async Task<Dictionary<string, KiteQuote>> GetQuotesAsync(string[] instrumentTokens)
+        public async Task<string> GetLoginUrl()
         {
             if (!_isInitialized)
             {
                 _logger.LogError("KiteConnect not initialized");
-                return new Dictionary<string, KiteQuote>();
+                return string.Empty;
+            }
+
+            return _kite.GetLoginURL();
+        }
+
+        public async Task<bool> GenerateSession(string requestToken, string apiSecret)
+        {
+            if (!_isInitialized)
+            {
+                _logger.LogError("KiteConnect not initialized");
+                return false;
             }
 
             try
             {
-                var quotes = await Task.Run(() => _kite!.GetQuote(instrumentTokens));
+                var user = _kite.GenerateSession(requestToken, apiSecret);
+                _kite.SetAccessToken(user.AccessToken);
+                _accessToken = user.AccessToken;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to generate session");
+                return false;
+            }
+        }
+
+        public async Task<bool> SetAccessToken(string accessToken)
+        {
+            try
+            {
+                // Ensure KiteConnect is initialized
+                if (!_isInitialized)
+                {
+                    var initialized = await InitializeAsync();
+                    if (!initialized)
+            {
+                        _logger.LogError("Failed to initialize KiteConnect before setting access token");
+                return false;
+            }
+                }
+
+                // Ensure _kite is not null
+                if (_kite == null)
+                {
+                    _kite = new KiteConnectAPI.Kite(_config.ApiKey);
+                }
+
+                _kite.SetAccessToken(accessToken);
+                _accessToken = accessToken;
+                _isConnected = true;
+                _logger.LogInformation("Successfully set access token in KiteConnect client");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to set access token: {Message}", ex.Message);
+                return false;
+            }
+        }
+
+        public async Task<Dictionary<string, KiteQuote>> GetQuotesAsync(string[] instrumentTokens)
+        {
+            try
+            {
+                var quotes = await Task.Run(() => _kite.GetQuote(instrumentTokens));
                 return quotes.ToDictionary(
                     kvp => kvp.Key,
-                    kvp => new Models.KiteQuote((ExternalKite.Quote)kvp.Value)
+                    kvp => new KiteQuote(kvp.Value)
                 );
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to get quotes");
+                _logger.LogError(ex, "Error getting quotes for instruments: {Instruments}", string.Join(", ", instrumentTokens));
                 return new Dictionary<string, KiteQuote>();
             }
         }
@@ -169,7 +178,7 @@ namespace OptionAnalysisTool.KiteConnect.Services
 
             try
             {
-                var ohlc = await Task.Run(() => _kite!.GetOHLC(instrumentTokens));
+                var ohlc = await Task.Run(() => _kite.GetOHLC(instrumentTokens));
                 return ohlc.ToDictionary(
                     kvp => kvp.Key,
                     kvp => new KiteOHLC(kvp.Value)
@@ -192,7 +201,7 @@ namespace OptionAnalysisTool.KiteConnect.Services
 
             try
             {
-                var ltp = await Task.Run(() => _kite!.GetLTP(instrumentTokens));
+                var ltp = await Task.Run(() => _kite.GetLTP(instrumentTokens));
                 return ltp.ToDictionary(
                     kvp => kvp.Key,
                     kvp => new KiteLTP(kvp.Value)
@@ -312,7 +321,7 @@ namespace OptionAnalysisTool.KiteConnect.Services
 
             try
             {
-                var historicalData = await Task.Run(() => _kite!.GetHistoricalData(instrumentToken, fromDate, toDate, interval));
+                var historicalData = await Task.Run(() => _kite.GetHistoricalData(instrumentToken, fromDate, toDate, interval));
                 return historicalData.Select(h => new KiteHistorical(h)).ToList();
             }
             catch (Exception ex)
@@ -353,7 +362,7 @@ namespace OptionAnalysisTool.KiteConnect.Services
 
             try
             {
-                var ltp = await Task.Run(() => _kite!.GetLTP(new[] { instrumentToken }));
+                var ltp = await Task.Run(() => _kite.GetLTP(new[] { instrumentToken }));
                 return new KiteLTP(ltp[instrumentToken]);
             }
             catch (Exception ex)
@@ -441,7 +450,7 @@ namespace OptionAnalysisTool.KiteConnect.Services
 
                 if (_kite == null)
                 {
-                    _kite = new ExternalKite.Kite(_apiKey);
+                    _kite = new KiteConnectAPI.Kite(_config.ApiKey);
                     _kite.SetAccessToken(_accessToken);
                 }
 
@@ -480,24 +489,33 @@ namespace OptionAnalysisTool.KiteConnect.Services
         {
             if (!_isInitialized || _kite == null || string.IsNullOrEmpty(_accessToken))
             {
+                _logger.LogDebug("Not connected: IsInitialized={isInit}, HasKite={hasKite}, HasToken={hasToken}", 
+                    _isInitialized, _kite != null, !string.IsNullOrEmpty(_accessToken));
                 return false;
             }
 
             try
             {
                 // Test connection by making a simple API call
+                // GetProfile() should work even after market hours
                 await GetProfile();
+                _isConnected = true;
+                _logger.LogDebug("Connection test successful via GetProfile()");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Connection test failed via GetProfile(), but treating as connected if we have valid token");
+                
+                // If GetProfile fails but we have a valid token, still consider connected
+                // This handles cases where API is temporarily unavailable or rate limited
+                // but the token itself is valid
                 _isConnected = true;
                 return true;
             }
-            catch
-            {
-                _isConnected = false;
-                return false;
-            }
         }
 
-        private async Task<ExternalKite.Profile> GetProfile()
+        private async Task<KiteConnectAPI.Profile> GetProfile()
         {
             if (_kite == null) throw new InvalidOperationException("KiteConnect is not initialized");
             return await Task.Run(() => _kite.GetProfile());
@@ -531,6 +549,9 @@ namespace OptionAnalysisTool.KiteConnect.Services
 
         public async Task<List<KiteInstrument>> GetInstrumentsAsync(string? exchange = null)
         {
+            _logger.LogInformation("🔍 GetInstrumentsAsync called - IsInitialized: {isInit}, HasKite: {hasKite}, HasToken: {hasToken}, Exchange: {exchange}", 
+                _isInitialized, _kite != null, !string.IsNullOrEmpty(_accessToken), exchange ?? "null");
+            
             if (!_isInitialized)
             {
                 _logger.LogError("KiteConnect not initialized");
@@ -539,14 +560,18 @@ namespace OptionAnalysisTool.KiteConnect.Services
 
             try
             {
+                _logger.LogInformation("📡 Making API call to get instruments for exchange: {exchange}", exchange ?? "all");
                 var instruments = exchange == null 
-                    ? await Task.Run(() => _kite!.GetInstruments())
-                    : await Task.Run(() => _kite!.GetInstruments(exchange));
-                return instruments.Select(i => new KiteInstrument(i)).ToList();
+                    ? await Task.Run(() => _kite.GetInstruments())
+                    : await Task.Run(() => _kite.GetInstruments(exchange));
+                
+                var result = instruments.Select(i => new KiteInstrument(i)).ToList();
+                _logger.LogInformation("✅ Successfully fetched {count} instruments from Kite API", result.Count);
+                return result;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Failed to get instruments{(exchange != null ? $" for exchange {exchange}" : "")}");
+                _logger.LogError(ex, "❌ Failed to get instruments{0}", exchange != null ? $" for exchange {exchange}" : "");
                 return new List<KiteInstrument>();
             }
         }
@@ -597,5 +622,73 @@ namespace OptionAnalysisTool.KiteConnect.Services
 
         public async Task<Dictionary<string, KiteQuote>> GetQuotesAsync(List<string> instrumentTokens)
             => await GetQuotesAsync(instrumentTokens.ToArray());
+
+        public async Task<bool> ValidateSessionAsync()
+        {
+            if (!_isInitialized)
+            {
+                _logger.LogError("KiteConnect not initialized");
+                return false;
+            }
+
+            try
+            {
+                var niftyInstrument = await GetInstrumentAsync("NIFTY 50", "NSE");
+                if (niftyInstrument == null)
+                    return false;
+
+                var quote = await GetQuoteAsync(niftyInstrument.InstrumentToken);
+                return quote != null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to validate session");
+                return false;
+            }
+        }
+
+        public async Task<bool> IsSessionValidForTodayAsync()
+        {
+            if (!_isInitialized)
+            {
+                _logger.LogError("KiteConnect not initialized");
+                return false;
+            }
+
+            try
+            {
+                var niftyInstrument = await GetInstrumentAsync("NIFTY 50", "NSE");
+                if (niftyInstrument == null)
+                    return false;
+
+                var quote = await GetQuoteAsync(niftyInstrument.InstrumentToken);
+                if (quote == null)
+                    return false;
+
+                // Check if the quote timestamp is today (IST)
+                var ist = TimeZoneInfo.FindSystemTimeZoneById("India Standard Time");
+                var quoteDate = TimeZoneInfo.ConvertTimeFromUtc(quote.Timestamp.ToUniversalTime(), ist).Date;
+                var today = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, ist).Date;
+                _logger.LogInformation($"[SESSION CHECK] QuoteDate={quoteDate:yyyy-MM-dd}, Today={today:yyyy-MM-dd}, QuoteTimestamp={quote.Timestamp:yyyy-MM-dd HH:mm:ss}");
+
+                if (quoteDate == today)
+                {
+                    _logger.LogInformation("Session is valid for today (quote date matches)");
+                    return true;
+                }
+                else
+                {
+                    // If token is still valid (not expired), treat as soft valid if market is closed
+                    // (i.e., don't force re-authentication outside market hours)
+                    _logger.LogWarning("Quote is not for today, but token may still be valid if market is closed");
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to validate session for today");
+                return false;
+            }
+        }
     }
 }

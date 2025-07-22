@@ -1,0 +1,20 @@
+﻿        private void ShowAuthenticationWindow()
+        {
+            try
+            {
+                // Show a simple message for now since full DI setup is not available in MainWindow
+                MessageBox.Show("Authentication Setup:\n\n" +
+                              "Please use the full application interface to access Settings for authentication.\n\n" +
+                              "Click OK to continue.", 
+                              "Authentication Info", 
+                              MessageBoxButton.OK, 
+                              MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Authentication window error: {ex.Message}", 
+                              "Error", 
+                              MessageBoxButton.OK, 
+                              MessageBoxImage.Error);
+            }
+        }

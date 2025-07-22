@@ -22,6 +22,77 @@ namespace OptionAnalysisTool.Common.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("OptionAnalysisTool.Models.AuthenticationToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AccessToken")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("ApiKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ApiSecret")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastUsedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Metadata")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("SourceIpAddress")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserId")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("UserName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("IX_AuthenticationTokens_CreatedAt");
+
+                    b.HasIndex("ApiKey", "IsActive")
+                        .HasDatabaseName("IX_AuthenticationTokens_ApiKey_IsActive");
+
+                    b.HasIndex("ExpiresAt", "IsActive")
+                        .HasDatabaseName("IX_AuthenticationTokens_ExpiresAt_IsActive");
+
+                    b.ToTable("AuthenticationTokens");
+                });
+
             modelBuilder.Entity("OptionAnalysisTool.Models.CircuitBreaker", b =>
                 {
                     b.Property<int>("Id")
@@ -187,18 +258,11 @@ namespace OptionAnalysisTool.Common.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<bool>("IsBreachAlert")
-                        .HasColumnType("bit");
-
                     b.Property<bool>("IsValidData")
                         .HasColumnType("bit");
 
                     b.Property<DateTime>("LastUpdated")
                         .HasColumnType("datetime2");
-
-                    b.Property<decimal>("LowerLimitChangePercent")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("NewLowerLimit")
                         .HasPrecision(18, 2)
@@ -224,14 +288,6 @@ namespace OptionAnalysisTool.Common.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<decimal>("RangeChangePercent")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("SeverityLevel")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
                     b.Property<decimal>("StrikePrice")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
@@ -240,6 +296,38 @@ namespace OptionAnalysisTool.Common.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<decimal>("UnderlyingChange")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("UnderlyingCircuitStatus")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("UnderlyingClose")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("UnderlyingHigh")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("UnderlyingLow")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("UnderlyingLowerCircuitLimit")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("UnderlyingOpen")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("UnderlyingPercentageChange")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("UnderlyingPrice")
                         .HasPrecision(18, 2)
@@ -250,9 +338,12 @@ namespace OptionAnalysisTool.Common.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<decimal>("UpperLimitChangePercent")
+                    b.Property<decimal>("UnderlyingUpperCircuitLimit")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<long>("UnderlyingVolume")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("ValidationMessage")
                         .IsRequired()
@@ -263,8 +354,8 @@ namespace OptionAnalysisTool.Common.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("SeverityLevel")
-                        .HasDatabaseName("IX_CircuitLimitTracker_SeverityLevel");
+                    b.HasIndex("DetectedAt")
+                        .HasDatabaseName("IX_CircuitLimitTracker_DetectedAt");
 
                     b.HasIndex("InstrumentToken", "DetectedAt")
                         .HasDatabaseName("IX_CircuitLimitTracker_InstrumentToken_DetectedAt");
@@ -706,6 +797,61 @@ namespace OptionAnalysisTool.Common.Migrations
                     b.ToTable("IndexSnapshots");
                 });
 
+            modelBuilder.Entity("OptionAnalysisTool.Models.Instrument", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Exchange")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("ExchangeToken")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("Expiry")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("InstrumentToken")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("InstrumentType")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Segment")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<decimal>("Strike")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("TradingSymbol")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Instruments");
+                });
+
             modelBuilder.Entity("OptionAnalysisTool.Models.IntradayOptionSnapshot", b =>
                 {
                     b.Property<int>("Id")
@@ -720,6 +866,11 @@ namespace OptionAnalysisTool.Common.Migrations
                     b.Property<decimal>("Change")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("ChangeReason")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("CircuitLimitStatus")
                         .IsRequired()
@@ -763,6 +914,9 @@ namespace OptionAnalysisTool.Common.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<DateTime>("OHLCDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<decimal>("Open")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
@@ -790,6 +944,11 @@ namespace OptionAnalysisTool.Common.Migrations
                     b.Property<string>("TradingStatus")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TradingSymbol")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("UnderlyingSymbol")
                         .IsRequired()
@@ -1138,6 +1297,9 @@ namespace OptionAnalysisTool.Common.Migrations
                     b.Property<decimal>("LastPrice")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("LastUpdated")
+                        .HasColumnType("datetime2");
 
                     b.Property<decimal>("Low")
                         .HasPrecision(18, 2)

@@ -1,13 +1,12 @@
-using ExternalKite = KiteConnect;
 using OptionAnalysisTool.KiteConnect.Models;
 
 namespace OptionAnalysisTool.KiteConnect
 {
     public class KiteConnectWrapper
     {
-        private readonly ExternalKite.Kite _kite;
+        private readonly global::KiteConnect.Kite _kite;
 
-        public KiteConnectWrapper(ExternalKite.Kite kite)
+        public KiteConnectWrapper(global::KiteConnect.Kite kite)
         {
             _kite = kite;
         }

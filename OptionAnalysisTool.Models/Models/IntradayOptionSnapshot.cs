@@ -17,6 +17,10 @@ namespace OptionAnalysisTool.Models
         
         [Required]
         [StringLength(100)]
+        public string TradingSymbol { get; set; } = string.Empty;
+        
+        [Required]
+        [StringLength(100)]
         public string Symbol { get; set; } = string.Empty;
         
         [Required]
@@ -48,6 +52,9 @@ namespace OptionAnalysisTool.Models
         public decimal UpperCircuitLimit { get; set; }
         public string CircuitLimitStatus { get; set; } = "Normal"; // Normal, Upper Circuit, Lower Circuit
         
+        [StringLength(200)]
+        public string ChangeReason { get; set; } = string.Empty;
+        
         // Greeks
         public decimal ImpliedVolatility { get; set; }
         
@@ -56,6 +63,9 @@ namespace OptionAnalysisTool.Models
         public DateTime CaptureTime { get; set; }
         public DateTime LastUpdated { get; set; }
         
+        // OHLC Date - The date this OHLC data belongs to
+        public DateTime OHLCDate { get; set; }
+        
         // Data Quality
         public bool IsValidData { get; set; } = true;
         public string ValidationMessage { get; set; } = string.Empty;
@@ -63,9 +73,12 @@ namespace OptionAnalysisTool.Models
         
         public IntradayOptionSnapshot()
         {
-            Timestamp = DateTime.UtcNow;
-            CaptureTime = DateTime.UtcNow;
-            LastUpdated = DateTime.UtcNow;
+            // Use IST timestamps (same as Kite API format)
+            var ist = TimeZoneInfo.FindSystemTimeZoneById("India Standard Time");
+            var nowIST = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, ist);
+            Timestamp = nowIST;
+            CaptureTime = nowIST;
+            LastUpdated = nowIST;
         }
     }
 } 

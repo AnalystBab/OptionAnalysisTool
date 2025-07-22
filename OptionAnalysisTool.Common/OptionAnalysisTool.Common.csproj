@@ -7,20 +7,34 @@
     <Nullable>enable</Nullable>
     <LangVersion>11.0</LangVersion>
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
+    <UseWPF>true</UseWPF>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.1" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.1" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.1">
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Tech.Zerodha.KiteConnect" Version="4.3.0" />
+    <PackageReference Include="EPPlus" Version="7.0.0" />
+  </ItemGroup>
+
+  <!-- Temporarily exclude problematic services -->
+  <ItemGroup>
+    <Compile Remove="Services\AutonomousDataService.cs" />
+    <Compile Remove="Services\AutonomousDataManager.cs" />
+    <Compile Remove="Services\SemiAutonomousAuthService.cs" />
+    <Compile Remove="Services\AutonomousAuthenticationService.cs" />
+    <Compile Remove="Services\ComprehensiveDataStorageService.cs" />
+    <Compile Remove="Services\CircuitLimitExcelExportService.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -30,7 +44,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\OptionAnalysisTool.Models\OptionAnalysisTool.Models.csproj" />
     <ProjectReference Include="..\OptionAnalysisTool.KiteConnect\OptionAnalysisTool.KiteConnect.csproj" />
   </ItemGroup>
 

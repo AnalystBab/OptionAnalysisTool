@@ -165,7 +165,7 @@ namespace OptionAnalysisTool.Common.Models
         public decimal LastPrice { get; set; }
         public int Volume { get; set; }
         public int OpenInterest { get; set; }
-        public string LastError { get; set; } = string.Empty;
-        public OptionContract Contract { get; set; } = new OptionContract();
+        public string? LastError { get; set; } = string.Empty;
+        public OptionContract? Contract { get; set; } = new OptionContract();
     }
 } 

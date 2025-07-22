@@ -33,5 +33,9 @@ namespace OptionAnalysisTool.Common.Repositories
 
         Task SaveOptionMonitoringStatsAsync(OptionMonitoringStats stats);
         Task<int> GetActiveContractsCountAsync(string symbol);
+
+        Task<bool> SaveSpotDataAsync(SpotData spotData);
+        
+        Task<List<IntradayOptionSnapshot>> GetSnapshotsByDateRangeAsync(DateTime startDate, DateTime endDate, string? symbol = null);
     }
 } 

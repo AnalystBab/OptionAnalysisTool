@@ -15,7 +15,9 @@ namespace OptionAnalysisTool.KiteConnect.Services
         
         // Initialization and Authentication
         Task<bool> InitializeAsync();
-        void SetAccessToken(string accessToken);
+        Task<string> GetLoginUrl();
+        Task<bool> GenerateSession(string requestToken, string apiSecret);
+        Task<bool> SetAccessToken(string accessToken);
         Task<string> GetAccessToken();
         Task<bool> LoginAsync();
         Task<bool> IsLoggedInAsync();
@@ -33,7 +35,6 @@ namespace OptionAnalysisTool.KiteConnect.Services
         
         // Quote Data
         Task<Dictionary<string, KiteQuote>> GetQuotesAsync(string[] instrumentTokens);
-        Task<Dictionary<string, KiteQuote>> GetQuotesAsync(List<string> instrumentTokens);
         Task<KiteQuote> GetQuoteAsync(string instrumentToken);
         Task<List<OptionAnalysisTool.Models.Quote>> GetQuotes(List<OptionAnalysisTool.Models.Instrument> instruments);
         Task<OptionAnalysisTool.Models.Quote> GetQuote(OptionAnalysisTool.Models.Instrument instrument);
@@ -49,5 +50,17 @@ namespace OptionAnalysisTool.KiteConnect.Services
         // Option Data
         Task<List<IntradayOptionSnapshot>> GetIntradayData(string symbol, DateTime date);
         Task<DailyOptionContract?> GetDailyData(string symbol, DateTime date);
+
+        /// <summary>
+        /// Validates if the current session is active and valid
+        /// </summary>
+        /// <returns>True if session is valid, false otherwise</returns>
+        Task<bool> ValidateSessionAsync();
+
+        /// <summary>
+        /// Validates if the session is valid for today by checking the trading date from a live quote
+        /// </summary>
+        /// <returns>True if session is valid and trading date is today, false otherwise</returns>
+        Task<bool> IsSessionValidForTodayAsync();
     }
 }

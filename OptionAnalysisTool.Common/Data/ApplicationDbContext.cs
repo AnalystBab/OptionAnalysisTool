@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using OptionAnalysisTool.Models;
+using OptionAnalysisTool.Common.Data.Models;
 
 namespace OptionAnalysisTool.Common.Data
 {
@@ -30,6 +31,13 @@ namespace OptionAnalysisTool.Common.Data
         public DbSet<HistoricalOptionData> HistoricalOptionData { get; set; }
         public DbSet<SpotData> SpotData { get; set; }
         public DbSet<CircuitLimitTracker> CircuitLimitTrackers { get; set; }
+        public DbSet<EODSyncResult> EODSyncResults { get; set; }
+        
+        // 🔐 Authentication token storage
+        public DbSet<AuthenticationToken> AuthenticationTokens { get; set; }
+        
+        // 🔧 Instrument data
+        public DbSet<Instrument> Instruments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -52,6 +60,13 @@ namespace OptionAnalysisTool.Common.Data
         private void ConfigureExistingEntities(ModelBuilder modelBuilder)
         {
             // Configure IntradayOptionSnapshot
+            modelBuilder.Entity<IntradayOptionSnapshot>()
+                .HasKey(e => e.Id);
+                
+            modelBuilder.Entity<IntradayOptionSnapshot>()
+                .Property(e => e.Id)
+                .ValueGeneratedOnAdd();
+                
             modelBuilder.Entity<IntradayOptionSnapshot>()
                 .HasIndex(e => new { e.Symbol, e.Timestamp });
 
@@ -139,6 +154,15 @@ namespace OptionAnalysisTool.Common.Data
                 .HasIndex(e => new { e.Symbol, e.DetectedAt })
                 .HasDatabaseName("IX_CircuitLimitTracker_Symbol_DetectedAt");
             
+            // 📊 Configure EODSyncResult - Track EOD sync history
+            modelBuilder.Entity<EODSyncResult>()
+                .HasIndex(e => new { e.TradingDate, e.UnderlyingSymbol })
+                .HasDatabaseName("IX_EODSyncResult_TradingDate_UnderlyingSymbol");
+            
+            modelBuilder.Entity<EODSyncResult>()
+                .HasIndex(e => e.CreatedAt)
+                .HasDatabaseName("IX_EODSyncResult_CreatedAt");
+            
             modelBuilder.Entity<CircuitLimitTracker>()
                 .HasIndex(e => new { e.UnderlyingSymbol, e.DetectedAt })
                 .HasDatabaseName("IX_CircuitLimitTracker_UnderlyingSymbol_DetectedAt");
@@ -155,8 +179,21 @@ namespace OptionAnalysisTool.Common.Data
 
             // Performance indexes for circuit limit analysis
             modelBuilder.Entity<CircuitLimitTracker>()
-                .HasIndex(e => e.SeverityLevel)
-                .HasDatabaseName("IX_CircuitLimitTracker_SeverityLevel");
+                .HasIndex(e => e.DetectedAt)
+                .HasDatabaseName("IX_CircuitLimitTracker_DetectedAt");
+                
+            // 🔐 Configure AuthenticationToken - Database token storage
+            modelBuilder.Entity<AuthenticationToken>()
+                .HasIndex(e => new { e.ApiKey, e.IsActive })
+                .HasDatabaseName("IX_AuthenticationTokens_ApiKey_IsActive");
+            
+            modelBuilder.Entity<AuthenticationToken>()
+                .HasIndex(e => new { e.ExpiresAt, e.IsActive })
+                .HasDatabaseName("IX_AuthenticationTokens_ExpiresAt_IsActive");
+            
+            modelBuilder.Entity<AuthenticationToken>()
+                .HasIndex(e => e.CreatedAt)
+                .HasDatabaseName("IX_AuthenticationTokens_CreatedAt");
         }
     }
 } 

@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace OptionAnalysisTool.Common.Services
 {
-    public class MarketHoursService
+    public class MarketHoursService : IMarketHoursService
     {
         private readonly ILogger<MarketHoursService> _logger;
         private static readonly TimeSpan MarketOpenTime = new(9, 15, 0);

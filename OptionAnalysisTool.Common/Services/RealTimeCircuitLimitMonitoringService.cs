@@ -55,6 +55,12 @@ namespace OptionAnalysisTool.Common.Services
             _marketHoursService = marketHoursService;
         }
 
+        public async Task StartMonitoringAsync(CancellationToken cancellationToken)
+        {
+            _logger.LogInformation("Starting real-time circuit limit monitoring");
+            await ExecuteAsync(cancellationToken);
+        }
+
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation("🔥 Real-Time Circuit Limit Monitoring Service started");
@@ -63,49 +69,19 @@ namespace OptionAnalysisTool.Common.Services
             {
                 try
                 {
-                    // Check if market is open
-                    if (_marketHoursService.IsMarketOpen())
-                    {
-                        _logger.LogInformation("🟢 Market is open - starting circuit limit monitoring");
-                        await RunMarketHoursMonitoring(stoppingToken);
-                    }
-                    else
-                    {
-                        _logger.LogInformation("🔴 Market is closed - waiting for next trading session");
-                        await WaitForMarketOpen(stoppingToken);
-                    }
-                }
-                catch (OperationCanceledException)
-                {
-                    _logger.LogInformation("Circuit limit monitoring service stopped");
-                    break;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "💥 Error in circuit limit monitoring service");
+                    // Check authentication status
+                    using var scope = new CancellationTokenSource();
+                    var isAuthenticated = await _kiteConnectService.ValidateSessionAsync();
                     
-                    // Wait before retrying
-                    await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
-                }
-            }
+                    if (!isAuthenticated)
+                    {
+                        _logger.LogWarning("Authentication invalid - waiting for token refresh");
+                        await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
+                        continue;
+                    }
 
-            _logger.LogInformation("🔥 Real-Time Circuit Limit Monitoring Service stopped");
-        }
-
-        /// <summary>
-        /// Main monitoring loop during market hours
-        /// </summary>
-        private async Task RunMarketHoursMonitoring(CancellationToken stoppingToken)
-        {
-            while (_marketHoursService.IsMarketOpen() && !stoppingToken.IsCancellationRequested)
-            {
-                try
-                {
                     var monitoringStartTime = DateTime.UtcNow;
                     
-                    // Refresh active instruments cache if needed
-                    await RefreshActiveInstrumentsCacheIfNeeded();
-
                     // Monitor all active instruments for circuit limit changes
                     int processedCount = await MonitorActiveInstruments();
 
@@ -126,25 +102,8 @@ namespace OptionAnalysisTool.Common.Services
                     await Task.Delay(TimeSpan.FromSeconds(MONITORING_INTERVAL_SECONDS), stoppingToken);
                 }
             }
-        }
 
-        /// <summary>
-        /// Wait for market to open
-        /// </summary>
-        private async Task WaitForMarketOpen(CancellationToken stoppingToken)
-        {
-            while (!_marketHoursService.IsMarketOpen() && !stoppingToken.IsCancellationRequested)
-            {
-                var timeToOpen = _marketHoursService.GetTimeToMarketOpen();
-                
-                if (timeToOpen.TotalMinutes <= 5)
-                {
-                    _logger.LogInformation("⏰ Market opens in {minutes:F1} minutes - preparing for monitoring", 
-                        timeToOpen.TotalMinutes);
-                }
-
-                await Task.Delay(TimeSpan.FromSeconds(MARKET_CHECK_INTERVAL_SECONDS), stoppingToken);
-            }
+            _logger.LogInformation("🔥 Real-Time Circuit Limit Monitoring Service stopped");
         }
 
         /// <summary>

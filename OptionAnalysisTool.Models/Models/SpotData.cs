@@ -38,6 +38,7 @@ namespace OptionAnalysisTool.Models
         
         // Timestamps
         public DateTime Timestamp { get; set; }
+        public DateTime LastUpdated { get; set; }
         public DateTime CapturedAt { get; set; }
         
         // Data Quality

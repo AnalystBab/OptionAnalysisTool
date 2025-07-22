@@ -10,6 +10,10 @@ namespace OptionAnalysisTool.KiteConnect.Models
         public KiteQuote(ExternalKite.Quote quote)
         {
             _quote = quote;
+            
+            // Populate circuit limits from the source quote
+            LowerCircuitLimit = quote.LowerCircuitLimit;
+            UpperCircuitLimit = quote.UpperCircuitLimit;
         }
 
         public ExternalKite.Quote Quote => _quote;

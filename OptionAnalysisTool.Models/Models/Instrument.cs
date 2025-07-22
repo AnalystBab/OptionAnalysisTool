@@ -39,6 +39,9 @@ namespace OptionAnalysisTool.Models
         [StringLength(20)]
         public string Exchange { get; set; }
 
+        public DateTime CreatedDate { get; set; }
+        public DateTime LastUpdated { get; set; }
+
         public Instrument()
         {
             InstrumentToken = string.Empty;

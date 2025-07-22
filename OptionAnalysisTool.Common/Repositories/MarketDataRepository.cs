@@ -394,5 +394,31 @@ namespace OptionAnalysisTool.Common.Repositories
                 return 0;
             }
         }
+
+        public async Task<bool> SaveSpotDataAsync(SpotData spotData)
+        {
+            try
+            {
+                _context.SpotData.Add(spotData);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error saving spot data");
+                return false;
+            }
+        }
+
+        public async Task<List<IntradayOptionSnapshot>> GetSnapshotsByDateRangeAsync(DateTime startDate, DateTime endDate, string? symbol = null)
+        {
+            var query = _context.IntradayOptionSnapshots
+                .Where(s => s.Timestamp >= startDate && s.Timestamp <= endDate);
+            if (!string.IsNullOrEmpty(symbol))
+            {
+                query = query.Where(s => s.Symbol == symbol);
+            }
+            return await query.OrderBy(s => s.Timestamp).ToListAsync();
+        }
     }
 } 

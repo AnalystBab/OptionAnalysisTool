@@ -8,19 +8,25 @@ using OptionAnalysisTool.Common.Data;
 using OptionAnalysisTool.Models;
 using OptionAnalysisTool.KiteConnect.Services;
 using OptionAnalysisTool.Common.Repositories;
+using OptionAnalysisTool.Common.Models;
 using KiteInstrument = OptionAnalysisTool.KiteConnect.Models.KiteInstrument;
 using KiteQuote = OptionAnalysisTool.KiteConnect.Models.KiteQuote;
 using DomainInstrument = OptionAnalysisTool.Models.Instrument;
 using DomainQuote = OptionAnalysisTool.Models.Quote;
+using Microsoft.Extensions.Hosting;
+using System.Threading;
+using Microsoft.Extensions.Configuration;
 
 namespace OptionAnalysisTool.Common.Services
 {
-    public class IntradayDataService
+    public class IntradayDataService : BackgroundService
     {
         private readonly IKiteConnectService _kiteConnectService;
         private readonly ApplicationDbContext _dbContext;
         private readonly ILogger<IntradayDataService> _logger;
         private readonly IMarketDataRepository _marketDataRepository;
+        private readonly IMarketHoursService _marketHoursService;
+        private readonly IConfiguration _configuration;
         private const decimal CIRCUIT_BUFFER_PERCENTAGE = 0.01m;
         private const decimal MAX_CIRCUIT_RANGE_PERCENTAGE = 0.40m;
 
@@ -28,12 +34,16 @@ namespace OptionAnalysisTool.Common.Services
             IKiteConnectService kiteConnectService,
             ApplicationDbContext dbContext,
             ILogger<IntradayDataService> logger,
-            IMarketDataRepository marketDataRepository)
+            IMarketDataRepository marketDataRepository,
+            IMarketHoursService marketHoursService,
+            IConfiguration configuration)
         {
             _kiteConnectService = kiteConnectService;
             _dbContext = dbContext;
             _logger = logger;
             _marketDataRepository = marketDataRepository;
+            _marketHoursService = marketHoursService;
+            _configuration = configuration;
         }
 
         public async Task<List<IntradayOptionSnapshot>> CaptureOptionSnapshots(string underlyingSymbol)
@@ -76,13 +86,6 @@ namespace OptionAnalysisTool.Common.Services
                     var snapshot = await CaptureOptionSnapshot(option);
                     if (snapshot != null)
                     {
-                        // Validate circuit limits
-                        if (!ValidateCircuitLimits(snapshot))
-                        {
-                            _logger.LogWarning("Invalid circuit limits detected for {symbol}. Upper: {upper}, Lower: {lower}, Last: {last}", 
-                                snapshot.Symbol, snapshot.UpperCircuitLimit, snapshot.LowerCircuitLimit, snapshot.LastPrice);
-                            continue;
-                        }
                         snapshots.Add(snapshot);
                     }
                 }
@@ -101,32 +104,19 @@ namespace OptionAnalysisTool.Common.Services
 
         private bool ValidateCircuitLimits(IntradayOptionSnapshot snapshot)
         {
-            // Basic validation rules for circuit limits
-            if (snapshot.UpperCircuitLimit <= 0 || snapshot.LowerCircuitLimit <= 0)
-            {
+            // Basic validation
+            if (snapshot.LowerCircuitLimit <= 0 || snapshot.UpperCircuitLimit <= 0)
                 return false;
-            }
 
+            // Circuit limits should have reasonable spread
             if (snapshot.UpperCircuitLimit <= snapshot.LowerCircuitLimit)
-            {
                 return false;
-            }
 
-            // Check if last price is within circuit limits
-            if (snapshot.LastPrice < snapshot.LowerCircuitLimit || snapshot.LastPrice > snapshot.UpperCircuitLimit)
-            {
+            // Circuit limits should be within reasonable range of last price
+            var maxCircuitRange = snapshot.LastPrice * MAX_CIRCUIT_RANGE_PERCENTAGE;
+            if (Math.Abs(snapshot.LastPrice - snapshot.LowerCircuitLimit) > maxCircuitRange ||
+                Math.Abs(snapshot.UpperCircuitLimit - snapshot.LastPrice) > maxCircuitRange)
                 return false;
-            }
-
-            // Additional validation for reasonable circuit limit range
-            var priceRange = snapshot.UpperCircuitLimit - snapshot.LowerCircuitLimit;
-            var averagePrice = (snapshot.UpperCircuitLimit + snapshot.LowerCircuitLimit) / 2m;
-            
-            // Circuit range should not be more than 40% of average price for options
-            if (priceRange > (averagePrice * MAX_CIRCUIT_RANGE_PERCENTAGE))
-            {
-                return false;
-            }
 
             return true;
         }
@@ -157,68 +147,138 @@ namespace OptionAnalysisTool.Common.Services
             }
         }
 
-        private async Task<IntradayOptionSnapshot> CaptureOptionSnapshot(Instrument option)
+        private async Task<IntradayOptionSnapshot?> CaptureOptionSnapshot(Instrument option)
         {
             try
             {
-                var quote = await _kiteConnectService.GetQuotesAsync(new[] { option.InstrumentToken });
-                if (!quote.Any())
+                var quotes = await _kiteConnectService.GetQuotesAsync(new[] { option.InstrumentToken });
+                if (!quotes.Any()) return null;
+
+                var kiteQuote = quotes.First().Value;
+                if (kiteQuote == null) return null;
+
+                var quote = new DomainQuote
                 {
-                    _logger.LogWarning("No quote data available for {symbol}", option.TradingSymbol);
-                    return null;
+                    InstrumentToken = kiteQuote.InstrumentToken.ToString(),
+                    LastPrice = kiteQuote.LastPrice,
+                    Change = kiteQuote.Change,
+                    Open = kiteQuote.Open,
+                    High = kiteQuote.High,
+                    Low = kiteQuote.Low,
+                    Close = kiteQuote.Close,
+                    Volume = kiteQuote.Volume,
+                    OpenInterest = kiteQuote.OpenInterest,
+                    LowerCircuitLimit = kiteQuote.LowerCircuitLimit,
+                    UpperCircuitLimit = kiteQuote.UpperCircuitLimit,
+                    ImpliedVolatility = kiteQuote.ImpliedVolatility
+                };
+
+                // TEMPORARY: COMMENT OUT ALL DUPLICATE PREVENTION LOGIC
+                // Always capture snapshot for every minute
+                bool shouldCaptureSnapshot = true;
+                string changeReason = "Minute-by-Minute Collection";
+
+                // COMMENTED OUT: Original duplicate prevention logic
+                /*
+                // Get the latest snapshot for this instrument
+                var latestSnapshot = await _dbContext.IntradayOptionSnapshots
+                    .Where(s => s.InstrumentToken == option.InstrumentToken)
+                    .OrderByDescending(s => s.Timestamp)
+                    .FirstOrDefaultAsync();
+
+                var marketHours = _marketHoursService.IsMarketOpen();
+                bool shouldCaptureSnapshot = false;
+                string? changeReason = null;
+
+                // TEMPORARY: Relaxed duplicate prevention for testing - capture data more frequently
+                if (latestSnapshot == null)
+                {
+                    // First snapshot for this instrument
+                    shouldCaptureSnapshot = true;
+                    changeReason = "Initial Snapshot";
+                }
+                else
+                {
+                    // Check if enough time has passed since last snapshot (5 minutes for testing)
+                    var timeSinceLastSnapshot = DateTime.Now - latestSnapshot.Timestamp;
+                    if (timeSinceLastSnapshot.TotalMinutes >= 5)
+                    {
+                        shouldCaptureSnapshot = true;
+                        changeReason = $"Regular Update - {timeSinceLastSnapshot.TotalMinutes:F1} minutes since last snapshot";
+                    }
+                    else if (marketHours)
+                    {
+                        // During market hours - capture if any significant trading data changes
+                        shouldCaptureSnapshot = 
+                            Math.Abs(latestSnapshot.LastPrice - quote.LastPrice) > 0.01m ||
+                            Math.Abs(latestSnapshot.Volume - quote.Volume) > 100 ||
+                            Math.Abs(latestSnapshot.OpenInterest - quote.OpenInterest) > 100 ||
+                            latestSnapshot.LowerCircuitLimit != quote.LowerCircuitLimit ||
+                            latestSnapshot.UpperCircuitLimit != quote.UpperCircuitLimit;
+                        
+                        if (shouldCaptureSnapshot)
+                        {
+                            changeReason = "Market Hours - Significant Data Change";
+                        }
+                    }
+                    else
+                    {
+                        // After market hours - capture if circuit limits change
+                        shouldCaptureSnapshot = 
+                            latestSnapshot.LowerCircuitLimit != quote.LowerCircuitLimit ||
+                            latestSnapshot.UpperCircuitLimit != quote.UpperCircuitLimit ||
+                            Math.Abs(latestSnapshot.OpenInterest - quote.OpenInterest) > 1000;
+                        
+                        if (shouldCaptureSnapshot)
+                        {
+                            changeReason = "After Hours - Circuit Limit or OI Change";
+                        }
+                    }
                 }
 
-                var kiteQuote = quote.Values.First();
-                var commonQuote = DomainQuote.FromKiteQuote(kiteQuote);
-                if (commonQuote == null)
+                if (!shouldCaptureSnapshot)
                 {
-                    _logger.LogWarning("Failed to convert quote data for {symbol}", option.TradingSymbol);
+                    _logger.LogDebug("⏸️ Skipping snapshot for {symbol} - no significant changes detected", option.TradingSymbol);
                     return null;
                 }
-
-                // Validate circuit limits from quote
-                if (commonQuote.LowerCircuitLimit <= 0 || commonQuote.UpperCircuitLimit <= 0)
-                {
-                    _logger.LogWarning("Invalid circuit limits in quote for {symbol}. Upper: {upper}, Lower: {lower}", 
-                        option.TradingSymbol, commonQuote.UpperCircuitLimit, commonQuote.LowerCircuitLimit);
-                    return null;
-                }
+                */
 
                 var snapshot = new IntradayOptionSnapshot
                 {
                     InstrumentToken = option.InstrumentToken,
-                    Symbol = option.TradingSymbol,
-                    UnderlyingSymbol = option.Name,
+                    TradingSymbol = option.TradingSymbol ?? string.Empty,
+                    Symbol = option.TradingSymbol ?? string.Empty,
+                    UnderlyingSymbol = option.Name ?? string.Empty,
                     StrikePrice = option.Strike,
-                    OptionType = option.InstrumentType,
+                    OptionType = option.InstrumentType ?? string.Empty,
                     ExpiryDate = option.Expiry ?? DateTime.MinValue,
-                    LastPrice = commonQuote.LastPrice,
-                    Open = commonQuote.Open,
-                    High = commonQuote.High,
-                    Low = commonQuote.Low,
-                    Close = commonQuote.Close,
-                    Change = commonQuote.Change,
-                    Volume = commonQuote.Volume,
-                    OpenInterest = commonQuote.OpenInterest,
-                    LowerCircuitLimit = commonQuote.LowerCircuitLimit,
-                    UpperCircuitLimit = commonQuote.UpperCircuitLimit,
-                    ImpliedVolatility = commonQuote.ImpliedVolatility,
-                    Timestamp = commonQuote.TimeStamp,
+                    LastPrice = quote.LastPrice,
+                    Change = quote.Change,
+                    Open = quote.Open,
+                    High = quote.High,
+                    Low = quote.Low,
+                    Close = quote.Close,
+                    Volume = quote.Volume,
+                    OpenInterest = quote.OpenInterest,
+                    LowerCircuitLimit = quote.LowerCircuitLimit,
+                    UpperCircuitLimit = quote.UpperCircuitLimit,
+                    ImpliedVolatility = quote.ImpliedVolatility,
+                    Timestamp = DateTime.Now,
+                    OHLCDate = DateTime.Today,
                     LastUpdated = DateTime.UtcNow,
-                    CircuitLimitStatus = DetermineCircuitLimitStatus(commonQuote),
+                    ChangeReason = changeReason,
+                    CircuitLimitStatus = DetermineCircuitLimitStatus(quote),
                     ValidationMessage = string.Empty,
                     TradingStatus = "Normal",
                     IsValidData = true
                 };
 
-                _logger.LogDebug("Captured snapshot for {symbol} at {time}. Circuit Limits - Lower: {lower}, Upper: {upper}", 
-                    option.TradingSymbol, snapshot.LastUpdated, snapshot.LowerCircuitLimit, snapshot.UpperCircuitLimit);
-
+                _logger.LogInformation("📊 Creating snapshot for {symbol}: {reason}", option.TradingSymbol, changeReason);
                 return snapshot;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error capturing snapshot for {symbol}", option.TradingSymbol);
+                _logger.LogError(ex, "Error capturing option snapshot for {symbol}", option.TradingSymbol);
                 return null;
             }
         }
@@ -238,37 +298,163 @@ namespace OptionAnalysisTool.Common.Services
 
             try
             {
-                // Group snapshots by symbol to handle duplicates
-                var groupedSnapshots = snapshots.GroupBy(s => s.Symbol);
-                
-                foreach (var group in groupedSnapshots)
+                _logger.LogInformation("🔍 Processing {count} snapshots for database save", snapshots.Count);
+                var savedCount = 0;
+
+                // TEMPORARY: COMMENT OUT ALL DUPLICATE PREVENTION LOGIC
+                // Save all snapshots without any duplicate checking
+                foreach (var snapshot in snapshots)
                 {
-                    var symbol = group.Key;
-                    var latestSnapshot = group.OrderByDescending(s => s.Timestamp).First();
-
-                    // Check for existing snapshot in last minute
-                    var existingSnapshot = await _dbContext.IntradayOptionSnapshots
-                        .Where(s => s.Symbol == symbol && 
-                                  s.Timestamp >= latestSnapshot.Timestamp.AddMinutes(-1))
-                        .FirstOrDefaultAsync();
-
-                    if (existingSnapshot == null)
+                    try
                     {
-                        await _dbContext.IntradayOptionSnapshots.AddAsync(latestSnapshot);
+                        // Add new snapshot directly without any duplicate checking
+                        await _dbContext.IntradayOptionSnapshots.AddAsync(snapshot);
+                        savedCount++;
+                        _logger.LogDebug("✅ Added snapshot for {symbol} at {time}", 
+                            snapshot.Symbol, snapshot.Timestamp);
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        _dbContext.Entry(existingSnapshot).CurrentValues.SetValues(latestSnapshot);
+                        _logger.LogError(ex, "Error processing snapshot for {symbol}", snapshot.Symbol);
                     }
                 }
 
+                // COMMENTED OUT: Original duplicate prevention logic
+                /*
+                var duplicateCount = 0;
+
+                foreach (var snapshot in snapshots)
+                {
+                    try
+                    {
+                        // TEMPORARY: Simplified duplicate prevention - only check for exact duplicates in the same minute
+                        var captureMinute = new DateTime(
+                            snapshot.Timestamp.Year, 
+                            snapshot.Timestamp.Month, 
+                            snapshot.Timestamp.Day, 
+                            snapshot.Timestamp.Hour, 
+                            snapshot.Timestamp.Minute, 0);
+
+                        var existingSnapshot = await _dbContext.IntradayOptionSnapshots
+                            .Where(s => s.InstrumentToken == snapshot.InstrumentToken &&
+                                       s.Timestamp >= captureMinute && 
+                                       s.Timestamp < captureMinute.AddMinutes(1) &&
+                                       s.LastPrice == snapshot.LastPrice &&
+                                       s.LowerCircuitLimit == snapshot.LowerCircuitLimit &&
+                                       s.UpperCircuitLimit == snapshot.UpperCircuitLimit)
+                            .FirstOrDefaultAsync();
+
+                        if (existingSnapshot != null)
+                        {
+                            duplicateCount++;
+                            _logger.LogDebug("⚠️ Skipping exact duplicate for {symbol} at {time}", 
+                                snapshot.Symbol, snapshot.Timestamp);
+                            continue;
+                        }
+
+                        // Add new snapshot
+                        await _dbContext.IntradayOptionSnapshots.AddAsync(snapshot);
+                        savedCount++;
+                        _logger.LogDebug("✅ Added new snapshot for {symbol} at {time}", 
+                            snapshot.Symbol, snapshot.Timestamp);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error processing snapshot for {symbol}", snapshot.Symbol);
+                    }
+                }
+                */
+
                 await _dbContext.SaveChangesAsync();
+                
+                _logger.LogInformation("✅ Snapshot processing complete - Saved: {saved} snapshots", savedCount);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error saving snapshots");
+                _logger.LogError(ex, "💥 Error saving snapshots");
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Smart duplicate detection - checks multiple criteria to prevent duplicates
+        /// </summary>
+        private async Task<bool> IsSnapshotDuplicateAsync(IntradayOptionSnapshot snapshot)
+        {
+            // Define the time window for duplicate detection (1 minute)
+            var captureMinute = new DateTime(
+                snapshot.CaptureTime.Year, 
+                snapshot.CaptureTime.Month, 
+                snapshot.CaptureTime.Day, 
+                snapshot.CaptureTime.Hour, 
+                snapshot.CaptureTime.Minute, 0);
+
+            // Check for exact duplicate (same symbol, strike, option type, and minute with identical data)
+            var existingSnapshot = await _dbContext.IntradayOptionSnapshots
+                .Where(s => s.Symbol == snapshot.Symbol && 
+                           s.StrikePrice == snapshot.StrikePrice &&
+                           s.OptionType == snapshot.OptionType &&
+                           s.CaptureTime >= captureMinute && 
+                           s.CaptureTime < captureMinute.AddMinutes(1) &&
+                           s.LastPrice == snapshot.LastPrice &&
+                           s.LowerCircuitLimit == snapshot.LowerCircuitLimit &&
+                           s.UpperCircuitLimit == snapshot.UpperCircuitLimit)
+                .FirstOrDefaultAsync();
+
+            return existingSnapshot != null;
+        }
+
+        /// <summary>
+        /// Get existing snapshot in the same minute (for potential updates)
+        /// </summary>
+        private async Task<IntradayOptionSnapshot> GetExistingSnapshotInSameMinuteAsync(IntradayOptionSnapshot snapshot)
+        {
+            var captureMinute = new DateTime(
+                snapshot.CaptureTime.Year, 
+                snapshot.CaptureTime.Month, 
+                snapshot.CaptureTime.Day, 
+                snapshot.CaptureTime.Hour, 
+                snapshot.CaptureTime.Minute, 0);
+
+            return await _dbContext.IntradayOptionSnapshots
+                .Where(s => s.Symbol == snapshot.Symbol && 
+                           s.StrikePrice == snapshot.StrikePrice &&
+                           s.OptionType == snapshot.OptionType &&
+                           s.CaptureTime >= captureMinute && 
+                           s.CaptureTime < captureMinute.AddMinutes(1))
+                .FirstOrDefaultAsync();
+        }
+
+        /// <summary>
+        /// Check if snapshot data has changed (for update decisions)
+        /// </summary>
+        private bool HasSnapshotDataChanged(IntradayOptionSnapshot existing, IntradayOptionSnapshot newSnapshot)
+        {
+            return existing.LastPrice != newSnapshot.LastPrice ||
+                   existing.LowerCircuitLimit != newSnapshot.LowerCircuitLimit ||
+                   existing.UpperCircuitLimit != newSnapshot.UpperCircuitLimit ||
+                   existing.Volume != newSnapshot.Volume ||
+                   existing.OpenInterest != newSnapshot.OpenInterest ||
+                   existing.High != newSnapshot.High ||
+                   existing.Low != newSnapshot.Low;
+        }
+
+        /// <summary>
+        /// Update existing snapshot with new data
+        /// </summary>
+        private void UpdateSnapshotData(IntradayOptionSnapshot existing, IntradayOptionSnapshot newSnapshot)
+        {
+            existing.LastPrice = newSnapshot.LastPrice;
+            existing.LowerCircuitLimit = newSnapshot.LowerCircuitLimit;
+            existing.UpperCircuitLimit = newSnapshot.UpperCircuitLimit;
+            existing.Volume = newSnapshot.Volume;
+            existing.OpenInterest = newSnapshot.OpenInterest;
+            existing.High = newSnapshot.High;
+            existing.Low = newSnapshot.Low;
+            existing.Change = newSnapshot.Change;
+            existing.CircuitLimitStatus = newSnapshot.CircuitLimitStatus;
+            existing.LastUpdated = DateTime.UtcNow;
+            existing.CaptureTime = newSnapshot.CaptureTime; // Update to latest capture time
         }
 
         public async Task<List<IntradayOptionSnapshot>> GetLatestSnapshots(string underlyingSymbol)
@@ -319,7 +505,7 @@ namespace OptionAnalysisTool.Common.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error saving snapshot for {symbol}", snapshot.Symbol);
+                _logger.LogError(ex, "Error saving snapshot for {symbol}. Fields: TradingSymbol='{TradingSymbol}', OHLCDate='{OHLCDate}', ChangeReason='{ChangeReason}', LastUpdated='{LastUpdated}'", snapshot.Symbol, snapshot.TradingSymbol, snapshot.OHLCDate, snapshot.ChangeReason, snapshot.LastUpdated);
                 return false;
             }
         }
@@ -601,6 +787,108 @@ namespace OptionAnalysisTool.Common.Services
                 OpenInterest = kiteQuote.OpenInterest,
                 TimeStamp = DateTime.UtcNow
             };
+        }
+
+        public async Task StartDataCollectionAsync(CancellationToken cancellationToken)
+        {
+            _logger.LogInformation("Starting intraday data collection");
+            await ExecuteAsync(cancellationToken);
+        }
+
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        {
+            _logger.LogInformation("Starting intraday data collection service");
+
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                try
+                {
+                    // Check authentication status
+                    var isAuthenticated = await _kiteConnectService.ValidateSessionAsync();
+                    
+                    if (!isAuthenticated)
+                    {
+                        _logger.LogWarning("Authentication invalid - waiting for token refresh");
+                        await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
+                        continue;
+                    }
+
+                    // Capture data for all supported indices
+                    foreach (var symbol in new[] { "NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY", "SENSEX", "BANKEX" })
+                    {
+                        try
+                        {
+                            var snapshots = await CaptureOptionSnapshots(symbol);
+                            if (snapshots.Any())
+                            {
+                                _logger.LogInformation("Captured {count} new snapshots with circuit limit changes for {symbol}", 
+                                    snapshots.Count, symbol);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Error capturing snapshots for {symbol}", symbol);
+                        }
+                    }
+
+                    // Wait for next capture cycle (1 minute)
+                    await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error in data collection cycle");
+                    await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
+                }
+            }
+
+            _logger.LogInformation("Intraday data collection service stopped");
+        }
+
+        private async Task ProcessQuoteData(KiteQuote quote)
+        {
+            try
+            {
+                var instrument = await _dbContext.Instruments
+                    .FirstOrDefaultAsync(i => i.InstrumentToken == quote.InstrumentToken.ToString());
+
+                if (instrument == null)
+                {
+                    _logger.LogWarning("Received quote for unknown instrument: {token}", quote.InstrumentToken);
+                    return;
+                }
+
+                var snapshot = new IntradayOptionSnapshot
+                {
+                    InstrumentToken = instrument.InstrumentToken,
+                    TradingSymbol = instrument.TradingSymbol,
+                    StrikePrice = instrument.Strike,
+                    ExpiryDate = instrument.Expiry ?? DateTime.MinValue,
+                    OptionType = instrument.InstrumentType,
+                    LastPrice = quote.LastPrice,
+                    Change = quote.Change,
+                    Open = quote.Open,
+                    High = quote.High,
+                    Low = quote.Low,
+                    Close = quote.Close,
+                    Volume = quote.Volume,
+                    OpenInterest = quote.OpenInterest,
+                    LowerCircuitLimit = quote.LowerCircuitLimit,
+                    UpperCircuitLimit = quote.UpperCircuitLimit,
+                    ImpliedVolatility = quote.ImpliedVolatility,
+                    Timestamp = DateTime.Now,
+                    ChangeReason = "Real-time Quote Update"
+                };
+
+                await SaveSnapshotAsync(snapshot);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing quote data for instrument {token}", quote.InstrumentToken);
+            }
         }
     }
 } 

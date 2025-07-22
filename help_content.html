@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indian Option Analysis Tool - Complete Help Guide</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .header .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+            margin-top: 10px;
+        }
+        .toc {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .toc h2 {
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .toc ul {
+            list-style: none;
+            padding: 0;
+        }
+        .toc li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .toc a {
+            color: #333;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .toc a:hover {
+            color: #667eea;
+        }
+        .section {
+            background: white;
+            padding: 30px;
+            margin-bottom: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .section h2 {
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        .section h3 {
+            color: #764ba2;
+            margin-top: 25px;
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .feature-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        .feature-card h4 {
+            color: #667eea;
+            margin-top: 0;
+        }
+        .database-table {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .database-table h4 {
+            color: #764ba2;
+            margin-top: 0;
+            border-bottom: 2px solid #764ba2;
+            padding-bottom: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            background: white;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background: #667eea;
+            color: white;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        .highlight {
+            background: #fff3cd;
+            padding: 15px;
+            border-left: 4px solid #ffc107;
+            margin: 15px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .alert {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-left: 4px solid #28a745;
+            margin: 15px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .warning {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-left: 4px solid #dc3545;
+            margin: 15px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .widget-preview {
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin: 20px 0;
+            border: 2px solid #333;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-green { background: #28a745; }
+        .status-yellow { background: #ffc107; }
+        .status-red { background: #dc3545; }
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .help-button {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        .help-button:hover {
+            background: #764ba2;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🇮🇳 INDIAN OPTION ANALYSIS TOOL</h1>
+        <div class="subtitle">Professional Circuit Limit Monitoring & Option Analysis System</div>
+        <div class="subtitle">Complete User Guide & Technical Documentation</div>
+    </div>
+
+    <div class="toc">
+        <h2>📚 Quick Navigation</h2>
+        <ul>
+            <li><a href="#overview">🏛️ System Overview</a></li>
+            <li><a href="#database">💾 Database Schema & Tables</a></li>
+            <li><a href="#features">🚀 Application Features</a></li>
+            <li><a href="#daily-ops">📅 Daily Operations Guide</a></li>
+            <li><a href="#widget">🖥️ Desktop Widget</a></li>
+            <li><a href="#troubleshooting">🔧 Troubleshooting</a></li>
+            <li><a href="#advanced">🔬 Advanced Features</a></li>
+            <li><a href="#reference">📞 Quick Reference</a></li>
+        </ul>
+    </div>
+
+    <div class="section" id="overview">
+        <h2>🏛️ SYSTEM OVERVIEW</h2>
+        
+        <div class="highlight">
+            <strong>What is this application?</strong><br>
+            The Indian Option Analysis Tool is a professional-grade system designed for monitoring and analyzing Indian index option contracts. It specializes in <strong>circuit limit tracking</strong>, real-time data collection, and comprehensive option analysis.
+        </div>
+
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h4>🎯 Circuit Limit Monitoring</h4>
+                <p>Real-time tracking of circuit limit changes during market hours with timestamped precision and severity analysis.</p>
+            </div>
+            <div class="feature-card">
+                <h4>📊 Data Collection</h4>
+                <p>Continuous intraday option data capture from Kite Connect API every 30 seconds during market hours.</p>
+            </div>
+            <div class="feature-card">
+                <h4>📈 Historical Analysis</h4>
+                <p>Comprehensive storage and querying of historical option data with EOD processing and consolidation.</p>
+            </div>
+            <div class="feature-card">
+                <h4>🔍 Market Intelligence</h4>
+                <p>Automated detection of significant market movements with pattern recognition and alert systems.</p>
+            </div>
+        </div>
+
+        <h3>Market Specifications</h3>
+        <table>
+            <tr>
+                <th>Parameter</th>
+                <th>Value</th>
+                <th>Description</th>
+            </tr>
+            <tr>
+                <td>Exchange</td>
+                <td>NSE (National Stock Exchange)</td>
+                <td>Primary Indian stock exchange</td>
+            </tr>
+            <tr>
+                <td>Focus</td>
+                <td>Index Options Only</td>
+                <td>NIFTY, BANKNIFTY, FINNIFTY contracts</td>
+            </tr>
+            <tr>
+                <td>Market Hours</td>
+                <td>9:15 AM to 3:30 PM</td>
+                <td>Regular trading session</td>
+            </tr>
+            <tr>
+                <td>Pre-Market</td>
+                <td>9:00 AM to 9:15 AM</td>
+                <td>Pre-market preparation phase</td>
+            </tr>
+            <tr>
+                <td>Monitoring Frequency</td>
+                <td>Every 30 seconds</td>
+                <td>Real-time circuit limit tracking</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section" id="database">
+        <h2>💾 DATABASE SCHEMA & TABLES</h2>
+        
+        <div class="alert">
+            <strong>Primary Database:</strong> <code>PalindromeResults</code><br>
+            All application data is stored in this SQL Server database with optimized indexes for fast querying.
+        </div>
+
+        <div class="database-table">
+            <h4>📊 IntradayOptionSnapshots</h4>
+            <p><strong>Purpose:</strong> Stores real-time option contract data captured every 30 seconds during market hours</p>
+            
+            <table>
+                <tr>
+                    <th>Column</th>
+                    <th>Type</th>
+                    <th>Key Info</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>Id</td>
+                    <td>int</td>
+                    <td>Primary Key</td>
+                    <td>Auto-increment identifier</td>
+                </tr>
+                <tr>
+                    <td>Symbol</td>
+                    <td>nvarchar(50)</td>
+                    <td>Indexed</td>
+                    <td>Option contract symbol (e.g., NIFTY25JAN24000CE)</td>
+                </tr>
+                <tr>
+                    <td>UnderlyingSymbol</td>
+                    <td>nvarchar(50)</td>
+                    <td>Indexed</td>
+                    <td>Index name (NIFTY, BANKNIFTY, FINNIFTY)</td>
+                </tr>
+                <tr>
+                    <td>StrikePrice</td>
+                    <td>decimal(18,2)</td>
+                    <td></td>
+                    <td>Strike price of the option</td>
+                </tr>
+                <tr>
+                    <td>OptionType</td>
+                    <td>nvarchar(10)</td>
+                    <td></td>
+                    <td>CE (Call) or PE (Put)</td>
+                </tr>
+                <tr>
+                    <td><strong>UpperCircuitLimit</strong></td>
+                    <td>decimal(18,2)</td>
+                    <td><strong>KEY FIELD</strong></td>
+                    <td><strong>Upper circuit limit - main tracking field</strong></td>
+                </tr>
+                <tr>
+                    <td><strong>LowerCircuitLimit</strong></td>
+                    <td>decimal(18,2)</td>
+                    <td><strong>KEY FIELD</strong></td>
+                    <td><strong>Lower circuit limit - main tracking field</strong></td>
+                </tr>
+                <tr>
+                    <td>LastPrice</td>
+                    <td>decimal(18,2)</td>
+                    <td></td>
+                    <td>Current trading price</td>
+                </tr>
+                <tr>
+                    <td>Volume</td>
+                    <td>bigint</td>
+                    <td></td>
+                    <td>Trading volume</td>
+                </tr>
+                <tr>
+                    <td>OpenInterest</td>
+                    <td>bigint</td>
+                    <td></td>
+                    <td>Open interest</td>
+                </tr>
+                <tr>
+                    <td>CaptureTime</td>
+                    <td>datetime2</td>
+                    <td>Indexed</td>
+                    <td>When this snapshot was captured</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="database-table">
+            <h4>🎯 CircuitLimitTrackers</h4>
+            <p><strong>Purpose:</strong> Dedicated table for tracking circuit limit changes with detailed metadata</p>
+            
+            <table>
+                <tr>
+                    <th>Column</th>
+                    <th>Type</th>
+                    <th>Key Info</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>Id</td>
+                    <td>int</td>
+                    <td>Primary Key</td>
+                    <td>Auto-increment identifier</td>
+                </tr>
+                <tr>
+                    <td>Symbol</td>
+                    <td>nvarchar(50)</td>
+                    <td>Indexed</td>
+                    <td>Option contract symbol</td>
+                </tr>
+                <tr>
+                    <td><strong>DetectedAt</strong></td>
+                    <td>datetime2</td>
+                    <td><strong>KEY FIELD</strong></td>
+                    <td><strong>When circuit limit change was detected</strong></td>
+                </tr>
+                <tr>
+                    <td><strong>PreviousUpperLimit</strong></td>
+                    <td>decimal(18,2)</td>
+                    <td></td>
+                    <td><strong>Previous upper circuit limit</strong></td>
+                </tr>
+                <tr>
+                    <td><strong>NewUpperLimit</strong></td>
+                    <td>decimal(18,2)</td>
+                    <td></td>
+                    <td><strong>New upper circuit limit</strong></td>
+                </tr>
+                <tr>
+                    <td><strong>PreviousLowerLimit</strong></td>
+                    <td>decimal(18,2)</td>
+                    <td></td>
+                    <td><strong>Previous lower circuit limit</strong></td>
+                </tr>
+                <tr>
+                    <td><strong>NewLowerLimit</strong></td>
+                    <td>decimal(18,2)</td>
+                    <td></td>
+                    <td><strong>New lower circuit limit</strong></td>
+                </tr>
+                <tr>
+                    <td><strong>PercentageChange</strong></td>
+                    <td>decimal(18,2)</td>
+                    <td></td>
+                    <td><strong>Percentage change in circuit limits</strong></td>
+                </tr>
+                <tr>
+                    <td>SeverityLevel</td>
+                    <td>nvarchar(20)</td>
+                    <td>Indexed</td>
+                    <td>HIGH, MEDIUM, LOW based on change magnitude</td>
+                </tr>
+                <tr>
+                    <td>UnderlyingPrice</td>
+                    <td>decimal(18,2)</td>
+                    <td></td>
+                    <td>Index price at time of change</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="database-table">
+            <h4>📈 HistoricalOptionData</h4>
+            <p><strong>Purpose:</strong> End-of-day consolidated data merged with circuit limit information</p>
+            
+            <div class="highlight">
+                <strong>Key Features:</strong> This table merges EOD data from Kite Connect with intraday circuit limit changes, providing a complete daily summary of each option contract's performance and circuit limit activity.
+            </div>
+        </div>
+
+        <div class="database-table">
+            <h4>🔐 AuthenticationTokens</h4>
+            <p><strong>Purpose:</strong> Secure storage of Kite Connect API authentication tokens</p>
+            
+            <table>
+                <tr>
+                    <th>Column</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>AccessToken</td>
+                    <td>Current active access token from Kite Connect</td>
+                </tr>
+                <tr>
+                    <td>ExpiresAt</td>
+                    <td>Token expiry (6 AM next day)</td>
+                </tr>
+                <tr>
+                    <td>IsActive</td>
+                    <td>Active status flag</td>
+                </tr>
+                <tr>
+                    <td>LastUsedAt</td>
+                    <td>Last successful use timestamp</td>
+                </tr>
+            </table>
+        </div>
+
+        <h3>Database Statistics Query</h3>
+        <div class="code-block">
+-- Get complete database overview
+SELECT 
+    'Intraday Snapshots' as TableName, 
+    COUNT(*) as Records,
+    MAX(CaptureTime) as LastUpdate
+FROM IntradayOptionSnapshots
+UNION ALL
+SELECT 
+    'Circuit Trackers' as TableName, 
+    COUNT(*) as Records,
+    MAX(DetectedAt) as LastUpdate
+FROM CircuitLimitTrackers
+UNION ALL
+SELECT 
+    'Historical Data' as TableName, 
+    COUNT(*) as Records,
+    MAX(TradingDate) as LastUpdate
+FROM HistoricalOptionData
+        </div>
+    </div>
+
+    <div class="section" id="features">
+        <h2>🚀 APPLICATION FEATURES</h2>
+        
+        <h3>🕘 Automated Market Cycle Management</h3>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h4>8:45 AM - Manual Authentication</h4>
+                <p><strong>ONLY MANUAL STEP:</strong> Run DailyAuth.bat to obtain daily access token</p>
+            </div>
+            <div class="feature-card">
+                <h4>9:00 AM - Pre-Market Start</h4>
+                <p><strong>AUTOMATIC:</strong> System preparation and pre-market monitoring begins</p>
+            </div>
+            <div class="feature-card">
+                <h4>9:15 AM - Market Open</h4>
+                <p><strong>AUTOMATIC:</strong> Full data collection and circuit monitoring starts</p>
+            </div>
+            <div class="feature-card">
+                <h4>3:30 PM - Market Close</h4>
+                <p><strong>AUTOMATIC:</strong> Data collection stops, EOD processing begins</p>
+            </div>
+        </div>
+
+        <h3>🎯 Circuit Limit Monitoring System</h3>
+        <div class="alert">
+            <strong>Real-time Detection:</strong> The system monitors circuit limit changes every 30 seconds during market hours, comparing current values with previous ones and storing any changes with complete metadata.
+        </div>
+
+        <h4>Circuit Limit Formula (Reverse Engineered)</h4>
+        <div class="code-block">
+Upper Circuit = LastPrice + (LastPrice × CircuitPercentage)
+Lower Circuit = LastPrice - (LastPrice × CircuitPercentage)
+
+Where CircuitPercentage varies by:
+- Contract price range
+- Volatility conditions  
+- Market sentiment
+- Exchange regulations
+        </div>
+
+        <h4>Change Severity Classification</h4>
+        <table>
+            <tr>
+                <th>Severity</th>
+                <th>Percentage Change</th>
+                <th>Color Code</th>
+                <th>Action Required</th>
+            </tr>
+            <tr>
+                <td><strong>HIGH</strong></td>
+                <td>&gt; 5%</td>
+                <td><span class="status-indicator status-red"></span>Red Alert</td>
+                <td>Immediate attention, check market conditions</td>
+            </tr>
+            <tr>
+                <td><strong>MEDIUM</strong></td>
+                <td>2% - 5%</td>
+                <td><span class="status-indicator status-yellow"></span>Yellow Warning</td>
+                <td>Monitor closely, potential opportunity</td>
+            </tr>
+            <tr>
+                <td><strong>LOW</strong></td>
+                <td>&lt; 2%</td>
+                <td><span class="status-indicator status-green"></span>Green Normal</td>
+                <td>Routine change, log for analysis</td>
+            </tr>
+        </table>
+
+        <h3>📊 Duplicate Prevention System</h3>
+        <div class="highlight">
+            <strong>Smart Pre-Insert Validation:</strong> The system prevents duplicate data BEFORE storing it in the database, not after. This approach saves storage space and ensures data quality from the beginning.
+        </div>
+
+        <h4>Prevention Strategy</h4>
+        <ul>
+            <li><strong>Intraday Snapshots:</strong> 1-minute window, multi-criteria matching</li>
+            <li><strong>Circuit Limit Changes:</strong> 5-minute window, actual change validation</li>
+            <li><strong>Identical Data:</strong> Skip insertion, log as duplicate</li>
+            <li><strong>Changed Data:</strong> Update existing record</li>
+            <li><strong>New Data:</strong> Insert fresh record</li>
+        </ul>
+    </div>
+
+    <div class="section" id="daily-ops">
+        <h2>📅 DAILY OPERATIONS GUIDE</h2>
+        
+        <div class="alert">
+            <strong>ONE MANUAL STEP PER DAY:</strong> The entire system requires only ONE manual action per day - running the authentication at 8:45 AM. Everything else is completely automatic.
+        </div>
+
+        <h3>🌅 Morning Routine</h3>
+        <div class="button-grid">
+            <div class="help-button">
+                <strong>8:45 AM - MANUAL STEP</strong><br>
+                Run: DailyAuth.bat<br>
+                Obtains daily access token
+            </div>
+            <div class="help-button" style="background: #28a745;">
+                <strong>9:00 AM - AUTOMATIC</strong><br>
+                Pre-market monitoring starts<br>
+                System preparation
+            </div>
+            <div class="help-button" style="background: #28a745;">
+                <strong>9:15 AM - AUTOMATIC</strong><br>
+                Market data collection<br>
+                Circuit limit tracking
+            </div>
+            <div class="help-button" style="background: #28a745;">
+                <strong>3:30 PM - AUTOMATIC</strong><br>
+                Data collection stops<br>
+                EOD processing begins
+            </div>
+        </div>
+
+        <h3>🔍 Monitoring During Market Hours</h3>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h4>Desktop Widget</h4>
+                <p>Real-time status display showing market condition, data collection status, and recent circuit changes.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Automatic Logging</h4>
+                <p>All activities are logged automatically. Check logs only if issues are suspected.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Database Monitoring</h4>
+                <p>Widget shows live database statistics and connection status.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Circuit Alerts</h4>
+                <p>High-severity circuit limit changes are highlighted in the widget.</p>
+            </div>
+        </div>
+
+        <h3>🌙 End-of-Day Process (Automatic)</h3>
+        <ol>
+            <li><strong>Data Collection Stops:</strong> At 3:30 PM automatically</li>
+            <li><strong>Kite EOD Fetch:</strong> Downloads end-of-day data from Kite Connect</li>
+            <li><strong>Circuit Limit Merge:</strong> Combines intraday circuit data with EOD data</li>
+            <li><strong>Historical Storage:</strong> Stores consolidated data in HistoricalOptionData table</li>
+            <li><strong>Data Validation:</strong> Performs integrity checks</li>
+            <li><strong>Cleanup:</strong> Removes temporary data and optimizes database</li>
+        </ol>
+    </div>
+
+    <div class="section" id="widget">
+        <h2>🖥️ DESKTOP WIDGET</h2>
+        
+        <div class="highlight">
+            <strong>Enhanced Desktop Widget:</strong> Uses 25% of your desktop width and 75% of height, positioned on the right side of your screen for optimal visibility without interfering with other applications.
+        </div>
+
+        <h3>📱 Widget Layout Preview</h3>
+        <div class="widget-preview">
+🇮🇳 INDIAN OPTION ANALYSIS
+┌────────────────────────────────┐
+│ 📈 MARKET OPEN                │
+│ ⏰ 27-Dec-2024 14:30:15       │
+└────────────────────────────────┘
+
+┌────────────────────────────────┐
+│ 🔐 Authentication: ✅ ACTIVE   │
+│ 📅 Token Valid & Ready        │
+└────────────────────────────────┘
+
+┌────────────────────────────────┐
+│ 📊 TODAY'S ACTIVITY:          │
+│ ├─ Snapshots: 16,184          │
+│ ├─ Circuit Changes: 7         │
+│ └─ Last Capture: 14:29:45     │
+└────────────────────────────────┘
+
+┌────────────────────────────────┐
+│ 💾 DATABASE STATISTICS:       │
+│ ├─ Total Snapshots: 89,432    │
+│ ├─ Circuit Trackers: 284      │
+│ ├─ Historical Data: 12,567    │
+│ └─ Status: ✅ Connected       │
+└────────────────────────────────┘
+
+┌────────────────────────────────┐
+│ 🎯 RECENT CIRCUIT CHANGES:    │
+│ ├─ NIFTY25JAN24000CE at 14:15 │
+│ ├─ BANKNIFTY25JAN52000PE 13:45│
+│ └─ FINNIFTY25JAN23000CE 13:20 │
+└────────────────────────────────┘
+
+[🔐 Daily Auth] [🚀 Start Service]
+[🔄 Refresh]   [❓ Help]
+        </div>
+
+        <h3>🎨 Widget Features</h3>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h4>Real-time Updates</h4>
+                <p>Auto-refreshes every 5 seconds with latest market and system status</p>
+            </div>
+            <div class="feature-card">
+                <h4>Color-coded Status</h4>
+                <p><span class="status-indicator status-green"></span>Green: Normal, <span class="status-indicator status-yellow"></span>Yellow: Warning, <span class="status-indicator status-red"></span>Red: Alert</p>
+            </div>
+            <div class="feature-card">
+                <h4>Interactive Buttons</h4>
+                <p>Quick access to authentication, service start, refresh, and help functions</p>
+            </div>
+            <div class="feature-card">
+                <h4>Drag & Position</h4>
+                <p>Move the widget anywhere on your desktop by dragging</p>
+            </div>
+        </div>
+
+        <h3>🚀 Starting the Widget</h3>
+        <div class="code-block">
+# Method 1: Use the batch file (Recommended)
+.\StartEnhancedDesktopWidget.bat
+
+# Method 2: PowerShell directly
+powershell -ExecutionPolicy Bypass -File ".\EnhancedDesktopWidget.ps1"
+
+# Method 3: Alternative compact widget
+.\DesktopWidget.ps1
+        </div>
+    </div>
+
+    <div class="section" id="troubleshooting">
+        <h2>🔧 TROUBLESHOOTING</h2>
+        
+        <h3>🚨 Common Issues & Solutions</h3>
+        
+        <div class="warning">
+            <strong>Problem:</strong> "Authentication token expired"<br>
+            <strong>Solution:</strong> Run <code>.\DailyAuth.bat</code> to obtain fresh token
+        </div>
+
+        <div class="warning">
+            <strong>Problem:</strong> "No data being collected"<br>
+            <strong>Solution:</strong> 
+            <ol>
+                <li>Check if service is running: <code>.\CheckService.bat</code></li>
+                <li>Start data collection: <code>.\StartLiveMonitoring.bat</code></li>
+                <li>Verify authentication token is active</li>
+            </ol>
+        </div>
+
+        <div class="warning">
+            <strong>Problem:</strong> "Database connection failed"<br>
+            <strong>Solution:</strong>
+            <ol>
+                <li>Check SQL Server is running</li>
+                <li>Verify database name: <code>PalindromeResults</code></li>
+                <li>Ensure trusted connection is available</li>
+                <li>Check firewall settings</li>
+            </ol>
+        </div>
+
+        <div class="warning">
+            <strong>Problem:</strong> "Circuit limits not tracking"<br>
+            <strong>Solution:</strong>
+            <ol>
+                <li>Verify CircuitLimitTrackingService is running</li>
+                <li>Check market is open (9:15 AM - 3:30 PM)</li>
+                <li>Validate option contracts are active</li>
+                <li>Review circuit limit tracking logs</li>
+            </ol>
+        </div>
+
+        <h3>📋 Diagnostic Commands</h3>
+        <div class="button-grid">
+            <a href="#" class="help-button">
+                CheckService.bat<br>
+                <small>Verify service status</small>
+            </a>
+            <a href="#" class="help-button">
+                CheckLiveData.bat<br>
+                <small>Check data collection</small>
+            </a>
+            <a href="#" class="help-button">
+                CheckCircuitLimitTracking.bat<br>
+                <small>Circuit monitoring status</small>
+            </a>
+            <a href="#" class="help-button">
+                CheckDatabaseData.sql<br>
+                <small>Database verification</small>
+            </a>
+        </div>
+
+        <h3>🔍 Database Health Check</h3>
+        <div class="code-block">
+-- Verify recent data collection
+SELECT TOP 10 Symbol, CaptureTime, UpperCircuitLimit 
+FROM IntradayOptionSnapshots 
+ORDER BY CaptureTime DESC
+
+-- Check circuit limit changes today
+SELECT COUNT(*) as TodayCircuitChanges 
+FROM CircuitLimitTrackers 
+WHERE CAST(DetectedAt AS DATE) = CAST(GETDATE() AS DATE)
+
+-- Authentication status
+SELECT AccessToken, ExpiresAt, IsActive 
+FROM AuthenticationTokens 
+WHERE IsActive = 1
+        </div>
+    </div>
+
+    <div class="section" id="advanced">
+        <h2>🔬 ADVANCED FEATURES</h2>
+        
+        <h3>📈 Historical Data Analysis</h3>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h4>Circuit Limit Patterns</h4>
+                <p>Analyze time-based patterns of circuit limit changes to identify market trends</p>
+            </div>
+            <div class="feature-card">
+                <h4>Volume Correlation</h4>
+                <p>Study relationship between trading volume and circuit limit changes</p>
+            </div>
+            <div class="feature-card">
+                <h4>Strike Analysis</h4>
+                <p>Identify which strike prices experience most frequent circuit changes</p>
+            </div>
+            <div class="feature-card">
+                <h4>Index Impact</h4>
+                <p>Correlate index movements with option circuit limit modifications</p>
+            </div>
+        </div>
+
+        <h3>📊 Advanced Queries</h3>
+        <div class="code-block">
+-- Find options with highest circuit limit changes
+SELECT TOP 10 
+    Symbol, 
+    DetectedAt, 
+    PercentageChange,
+    NewUpperLimit - PreviousUpperLimit as UpperLimitChange
+FROM CircuitLimitTrackers 
+WHERE CAST(DetectedAt AS DATE) = GETDATE()
+ORDER BY PercentageChange DESC
+
+-- Daily circuit change summary
+SELECT 
+    CAST(DetectedAt AS DATE) as TradingDate,
+    COUNT(*) as TotalChanges,
+    AVG(PercentageChange) as AvgPercentageChange,
+    MAX(PercentageChange) as MaxChange
+FROM CircuitLimitTrackers 
+GROUP BY CAST(DetectedAt AS DATE)
+ORDER BY TradingDate DESC
+
+-- High volume contracts with circuit changes
+SELECT 
+    i.Symbol,
+    i.Volume,
+    c.DetectedAt,
+    c.PercentageChange
+FROM IntradayOptionSnapshots i
+INNER JOIN CircuitLimitTrackers c ON i.Symbol = c.Symbol
+WHERE i.Volume > 100000
+ORDER BY i.Volume DESC
+        </div>
+
+        <h3>🔔 Automated Monitoring</h3>
+        <p>The system automatically monitors for:</p>
+        <ul>
+            <li>High-impact circuit limit changes (&gt;5%)</li>
+            <li>Unusual volume patterns with circuit changes</li>
+            <li>Consecutive circuit limit modifications</li>
+            <li>Cross-index correlation patterns</li>
+        </ul>
+    </div>
+
+    <div class="section" id="reference">
+        <h2>📞 QUICK REFERENCE</h2>
+        
+        <h3>🔥 Emergency Commands</h3>
+        <div class="code-block">
+# EMERGENCY: Stop all services
+taskkill /f /im "OptionAnalysisTool.Console.exe"
+
+# EMERGENCY: Restart authentication
+.\DailyAuth.bat
+
+# EMERGENCY: Check if anything is running
+.\CheckService.bat
+
+# EMERGENCY: Start minimal data collection
+.\StartLiveMonitoring.bat
+        </div>
+
+        <h3>📱 Widget Launchers</h3>
+        <div class="button-grid">
+            <div class="help-button">
+                Enhanced Widget<br>
+                <code>.\StartEnhancedDesktopWidget.bat</code>
+            </div>
+            <div class="help-button">
+                Compact Widget<br>
+                <code>.\DesktopWidget.ps1</code>
+            </div>
+            <div class="help-button">
+                Full Widget<br>
+                <code>.\SystemStatusWidget.ps1</code>
+            </div>
+        </div>
+
+        <h3>🗃️ Essential Database Queries</h3>
+        <div class="code-block">
+-- Today's activity summary
+SELECT 
+    (SELECT COUNT(*) FROM IntradayOptionSnapshots 
+     WHERE CAST(CaptureTime AS DATE) = CAST(GETDATE() AS DATE)) as TodaySnapshots,
+    (SELECT COUNT(*) FROM CircuitLimitTrackers 
+     WHERE CAST(DetectedAt AS DATE) = CAST(GETDATE() AS DATE)) as TodayCircuitChanges,
+    (SELECT COUNT(*) FROM AuthenticationTokens 
+     WHERE IsActive = 1) as ActiveTokens
+
+-- Recent high-impact circuit changes
+SELECT TOP 5 Symbol, DetectedAt, PercentageChange, SeverityLevel
+FROM CircuitLimitTrackers 
+WHERE SeverityLevel = 'HIGH'
+ORDER BY DetectedAt DESC
+
+-- System health check
+SELECT 'Last Data Update' as Status, 
+       CAST(MAX(CaptureTime) as VARCHAR) as Value
+FROM IntradayOptionSnapshots
+        </div>
+
+        <h3>⚡ Performance Tips</h3>
+        <ul>
+            <li><strong>Daily Authentication:</strong> Run at exactly 8:45 AM for best results</li>
+            <li><strong>Widget Position:</strong> Keep on secondary monitor if available</li>
+            <li><strong>Database Maintenance:</strong> Archive old data monthly</li>
+            <li><strong>System Resources:</strong> Close unnecessary applications during market hours</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🎉 CONCLUSION</h2>
+        <div class="alert">
+            This <strong>Indian Option Analysis Tool</strong> provides comprehensive circuit limit monitoring and option analysis capabilities. With <strong>minimal daily intervention</strong> (one authentication step), it delivers <strong>professional-grade market intelligence</strong> through automated data collection, real-time circuit limit tracking, and advanced analysis features.
+        </div>
+
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h4>✅ Automated Data Collection</h4>
+                <p>30-second interval monitoring during market hours</p>
+            </div>
+            <div class="feature-card">
+                <h4>✅ Circuit Limit Tracking</h4>
+                <p>Real-time detection with severity analysis</p>
+            </div>
+            <div class="feature-card">
+                <h4>✅ Professional Widget</h4>
+                <p>25% desktop space, comprehensive status display</p>
+            </div>
+            <div class="feature-card">
+                <h4>✅ Robust Architecture</h4>
+                <p>Duplicate prevention, error handling, data integrity</p>
+            </div>
+        </div>
+
+        <div class="highlight">
+            <strong>Version:</strong> 1.0 | <strong>Last Updated:</strong> December 27, 2024<br>
+            <strong>Target Audience:</strong> Traders, Analysts, Developers<br>
+            <strong>Support:</strong> Use diagnostic tools and troubleshooting sections above
+        </div>
+    </div>
+
+    <script>
+        // Add smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Add copy code functionality
+        document.querySelectorAll('.code-block').forEach(block => {
+            block.addEventListener('click', function() {
+                navigator.clipboard.writeText(this.innerText);
+                this.style.background = '#1a4d3a';
+                setTimeout(() => {
+                    this.style.background = '#2d3748';
+                }, 500);
+            });
+        });
+    </script>
+</body>
+</html> 
